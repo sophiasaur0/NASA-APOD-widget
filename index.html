@@ -2,91 +2,223 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NASA APOD Widget</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NASA APOD</title>
 
 <style>
-html, body{
+*{
     margin:0;
     padding:0;
+    box-sizing:border-box;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     background:#000;
-    color:white;
-    font-family:Arial, sans-serif;
 }
 
-.container{
-    max-width:900px;
-    margin:auto;
+#background{
+    position:fixed;
+    inset:0;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    filter:brightness(.85);
+    animation:fade 1.3s ease;
 }
 
-img{
+#video{
+    position:fixed;
+    inset:0;
     width:100%;
-    display:block;
-}
-
-iframe{
-    width:100%;
-    height:500px;
+    height:100%;
     border:none;
 }
 
-.text{
-    padding:20px;
+.overlay{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(to top,
+            rgba(0,0,0,.75),
+            rgba(0,0,0,.15),
+            rgba(0,0,0,.05));
 }
 
-h1{
-    font-size:24px;
-    margin-bottom:8px;
+.card{
+
+    position:absolute;
+    left:28px;
+    bottom:28px;
+
+    max-width:450px;
+
+    backdrop-filter:blur(20px);
+    background:rgba(30,30,30,.35);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    border-radius:20px;
+
+    padding:20px;
+
+    color:white;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,.4);
+
 }
 
 .date{
-    opacity:.7;
-    margin-bottom:16px;
+    font-size:13px;
+    opacity:.75;
+    margin-bottom:6px;
 }
 
-p{
-    line-height:1.5;
+h1{
+    font-size:28px;
+    line-height:1.2;
+    margin-bottom:14px;
+}
+
+#description{
+    line-height:1.55;
+    font-size:15px;
+    max-height:0;
+    overflow:hidden;
+    transition:.4s;
+}
+
+#description.show{
+    max-height:500px;
+    margin-top:14px;
+}
+
+button{
+    margin-top:8px;
+    background:white;
+    color:black;
+    border:none;
+    border-radius:999px;
+    padding:9px 18px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+button:hover{
+    opacity:.9;
+}
+
+@keyframes fade{
+from{
+opacity:0;
+transform:scale(1.04);
+}
+to{
+opacity:1;
+transform:scale(1);
+}
+}
+
+@media(max-width:650px){
+
+.card{
+left:16px;
+right:16px;
+bottom:16px;
+max-width:none;
+}
+
+h1{
+font-size:22px;
+}
+
 }
 </style>
 
 </head>
+
 <body>
 
-<div class="container">
+<div id="background"></div>
 
-<div id="media"></div>
+<iframe id="video" style="display:none"></iframe>
 
-<div class="text">
+<div class="overlay"></div>
+
+<div class="card">
+
+<div class="date" id="date"></div>
+
 <h1 id="title"></h1>
-<div id="date" class="date"></div>
-<p id="explanation"></p>
-</div>
+
+<div id="description"></div>
+
+<button id="toggle">
+Read more
+</button>
 
 </div>
 
 <script>
 
-fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY")
-.then(response=>response.json())
+const API="https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY";
+
+fetch(API)
+.then(r=>r.json())
 .then(data=>{
 
 document.getElementById("title").textContent=data.title;
 document.getElementById("date").textContent=data.date;
-document.getElementById("explanation").textContent=data.explanation;
+document.getElementById("description").textContent=data.explanation;
 
 if(data.media_type==="image"){
 
-document.getElementById("media").innerHTML=
-`<img src="${data.hdurl || data.url}" alt="">`;
+document.getElementById("background").style.backgroundImage=
+`url(${data.hdurl||data.url})`;
 
 }else{
 
-document.getElementById("media").innerHTML=
-`<iframe src="${data.url}" allowfullscreen></iframe>`;
+document.getElementById("background").style.display="none";
+
+const frame=document.getElementById("video");
+frame.style.display="block";
+frame.src=data.url;
 
 }
 
 });
+
+const desc=document.getElementById("description");
+
+const btn=document.getElementById("toggle");
+
+btn.onclick=()=>{
+
+desc.classList.toggle("show");
+
+btn.textContent=
+desc.classList.contains("show")
+?"Hide"
+:"Read more";
+
+};
+
+// Refresh if the widget stays open overnight
+setInterval(()=>{
+
+const now=new Date();
+
+if(now.getHours()===0 && now.getMinutes()===1){
+
+location.reload();
+
+}
+
+},60000);
 
 </script>
 
