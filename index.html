@@ -142,26 +142,64 @@ html,body{
 
 /* Expandable description */
 .description{
+
     margin-top:14px;
+
     width:320px;
+
     max-height:0;
+
     overflow:hidden;
+
     color:white;
+
     backdrop-filter:blur(18px);
+
     background:rgba(18,18,18,.55);
+
     border:1px solid rgba(255,255,255,.1);
+
     border-radius:18px;
+
     line-height:1.55;
+
     font-size:14px;
+
     transition:
         max-height .35s ease,
         padding .35s ease;
+
     padding:0 18px;
+
+    overflow-y:auto;
+
+    scrollbar-width:thin;
+
 }
 
 .description.show{
-    max-height:420px;
+
+    max-height:240px;
+
     padding:18px;
+
+}
+
+.description::-webkit-scrollbar{
+    width:8px;
+}
+
+.description::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+.description::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,.3);
+    border-radius:999px;
+}
+
+.description::-webkit-scrollbar-thumb:hover{
+    background:rgba(255,255,255,.5);
 }
 
 /* Fade-in animation */
@@ -225,126 +263,68 @@ title="Show explanation">
 </div>
 
 <script>
-const API =
-"https://api.nasa.gov/planetary/apod?api_key=3s8D60O6dx4Fr1OZFjEZ9EiDEcHdTzblxPKh7mcE";
-// Replace DEMO_KEY with your own API key later.
+const API = "https://api.nasa.gov/planetary/apod?api_key=3s8D60O6dx4Fr1OZFjEZ9EiDEcHdTzblxPKh7mcE";
 
-const CACHE_KEY = "nasa_apod_cache";
-const today = new Date().toISOString().slice(0,10);
+const loading = document.getElementById("loading");
+const background = document.getElementById("background");
+const video = document.getElementById("video");
+const title = document.getElementById("title");
+const date = document.getElementById("date");
+const description = document.getElementById("description");
+const meta = document.getElementById("meta");
 
-function render(data){
-
-    document.getElementById("title").textContent = data.title;
-    document.getElementById("date").textContent = data.date;
-    document.getElementById("description").textContent = data.explanation;
-
-    if(data.media_type === "image"){
-
-        document.getElementById("background").style.backgroundImage =
-            `url(${data.url})`;
-
-    }else{
-
-        document.getElementById("background").style.display = "none";
-
-        const frame = document.getElementById("video");
-        frame.style.display = "block";
-        frame.src = data.url;
-    }
-
-    document.getElementById("loading").style.display = "none";
-}
-
-// Load from cache first
-const cached = localStorage.getItem(CACHE_KEY);
-
-if(cached){
-
-    try{
-
-        const parsed = JSON.parse(cached);
-
-        if(parsed.date === today){
-
-            render(parsed.data);
-
-        }else{
-
-            fetchLatest();
-
+fetch(API)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("NASA API request failed");
         }
-
-    }catch{
-
-        fetchLatest();
-
-    }
-
-}else{
-
-    fetchLatest();
-
-}
-
-function fetchLatest(){
-
-    fetch(API)
-    .then(r => r.json())
+        return response.json();
+    })
     .then(data => {
 
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-            date: today,
-            data: data
-        }));
+        title.textContent = data.title;
+        date.textContent = data.date;
+        description.textContent = data.explanation;
 
-        render(data);
+        if (data.media_type === "image") {
+
+            background.style.display = "block";
+            background.style.backgroundImage = `url(${data.url})`;
+
+            video.style.display = "none";
+            video.src = "";
+
+        } else {
+
+            background.style.display = "none";
+
+            video.style.display = "block";
+            video.src = data.url;
+        }
+
+        loading.style.display = "none";
 
     })
-    .catch(err => {
+    .catch(error => {
 
-        document.getElementById("loading").innerHTML =
-            "<div style='color:white;font-size:14px'>Unable to load NASA APOD</div>";
+        loading.innerHTML =
+            "<div style='color:white;font-size:14px'>Unable to load today's APOD.</div>";
 
-        console.error(err);
+        console.error(error);
 
     });
 
-}
-
-// Description toggle
-const desc = document.getElementById("description");
-const meta = document.getElementById("meta");
-
 document.getElementById("toggle").onclick = () => {
 
-    desc.classList.toggle("show");
+    description.classList.toggle("show");
 
-    // Keep title/date visible while description is open
-    if(desc.classList.contains("show")){
-
+    if (description.classList.contains("show")) {
         meta.classList.add("show");
-
-    }else{
-
+    } else {
         meta.classList.remove("show");
-
     }
 
 };
-
-// Refresh shortly after midnight
-setInterval(() => {
-
-    const now = new Date();
-
-    if(now.getHours() === 0 && now.getMinutes() === 1){
-
-        localStorage.removeItem(CACHE_KEY);
-        location.reload();
-
-    }
-
-}, 60000);
 </script>
 
 </body>
